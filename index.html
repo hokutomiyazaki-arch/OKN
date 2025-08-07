@@ -2,7 +2,11 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1a1a1a">
     <title>OKN (Optokinetic Nystagmus) 検査アプリ</title>
     <style>
         * {
@@ -16,6 +20,11 @@
             background: #1a1a1a;
             color: #fff;
             overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100vh;
+            height: 100dvh; /* Dynamic viewport height for mobile */
+            touch-action: none; /* Prevent scroll and zoom */
         }
 
         #canvas {
@@ -245,6 +254,36 @@
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
         
+        // Hide address bar on mobile
+        function hideAddressBar() {
+            setTimeout(() => {
+                window.scrollTo(0, 1);
+            }, 100);
+        }
+        
+        // Full screen support
+        function enterFullscreen() {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen();
+            } else if (elem.webkitRequestFullscreen) { // Safari
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) { // IE/Edge
+                elem.msRequestFullscreen();
+            }
+        }
+        
+        // Mobile optimizations
+        window.addEventListener('load', hideAddressBar);
+        window.addEventListener('orientationchange', hideAddressBar);
+        
+        // Prevent bounce scroll on iOS
+        document.addEventListener('touchmove', (e) => {
+            if (e.target === canvas) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
         // Speed slider update
         speedSlider.addEventListener('input', (e) => {
             speed = parseInt(e.target.value);
@@ -457,6 +496,11 @@
         // Start function
         function start() {
             if (isRunning) return;
+            
+            // Try to enter fullscreen on mobile
+            if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+                enterFullscreen();
+            }
             
             isRunning = true;
             startTime = Date.now();
