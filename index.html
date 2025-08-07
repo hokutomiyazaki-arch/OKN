@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OKN (Optokinetic Nystagmus) 検査アプリ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            cursor: none;
+        }
+
+        #controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            max-width: 320px;
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        #controls.hidden {
+            transform: translateX(-350px);
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        select, input[type="range"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #4CAF50;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        option {
+            background: #2a2a2a;
+        }
+
+        input[type="range"] {
+            padding: 5px;
+        }
+
+        #speedDisplay, #durationDisplay {
+            display: inline-block;
+            margin-left: 10px;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        #stopBtn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        #toggleBtn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            z-index: 1001;
+        }
+
+        #timer {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            font-size: 36px;
+            font-weight: bold;
+            color: #4CAF50;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 25px;
+            border-radius: 10px;
+            display: none;
+            font-family: 'Courier New', monospace;
+        }
+
+        .info {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(76, 175, 80, 0.1);
+            border-left: 3px solid #4CAF50;
+            border-radius: 5px;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div id="controls">
+        <h2 style="margin-bottom: 20px; text-align: center;">OKN検査設定</h2>
+        
+        <div class="control-group">
+            <label for="direction">刺激方向</label>
+            <select id="direction">
+                <option value="right">右方向 →</option>
+                <option value="left">左方向 ←</option>
+                <option value="up">上方向 ↑</option>
+                <option value="down">下方向 ↓</option>
+                <option value="clockwise">右回転 (tOKN) ↻</option>
+                <option value="counterclockwise">左回転 (tOKN) ↺</option>
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label for="pattern">刺激パターン</label>
+            <select id="pattern">
+                <option value="blackwhite">ストライプ黒白</option>
+                <option value="redwhite">ストライプ赤白</option>
+                <option value="characters">キャラクター</option>
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label for="speed">速度: <span id="speedDisplay">50</span></label>
+            <input type="range" id="speed" min="10" max="200" value="50" step="10">
+        </div>
+        
+        <div class="control-group">
+            <label for="duration">刺激時間 (秒)</label>
+            <select id="duration">
+                <option value="30">30秒</option>
+                <option value="60">1分</option>
+                <option value="120">2分</option>
+                <option value="180">3分</option>
+                <option value="300">5分</option>
+                <option value="600">10分</option>
+            </select>
+        </div>
+        
+        <div class="button-group">
+            <button id="startBtn">開始</button>
+            <button id="stopBtn">停止</button>
+        </div>
+        
+        <div class="info">
+            <strong>使用方法:</strong><br>
+            設定を調整後、「開始」をクリックして検査を始めてください。<br>
+            「パネル表示」で設定パネルの表示/非表示を切り替えられます。
+        </div>
+    </div>
+    
+    <button id="toggleBtn">パネル非表示</button>
+    
+    <div id="timer">00:00</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const controls = document.getElementById('controls');
+        const toggleBtn = document.getElementById('toggleBtn');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const timer = document.getElementById('timer');
+        const speedSlider = document.getElementById('speed');
+        const speedDisplay = document.getElementById('speedDisplay');
+        
+        let animationId = null;
+        let startTime = null;
+        let duration = 30;
+        let speed = 50;
+        let offset = 0;
+        let rotationAngle = 0;
+        let isRunning = false;
+        
+        // Canvas size setup
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Speed slider update
+        speedSlider.addEventListener('input', (e) => {
+            speed = parseInt(e.target.value);
+            speedDisplay.textContent = speed;
+        });
+        
+        // Toggle panel visibility
+        toggleBtn.addEventListener('click', () => {
+            controls.classList.toggle('hidden');
+            toggleBtn.textContent = controls.classList.contains('hidden') ? 'パネル表示' : 'パネル非表示';
+        });
+        
+        // Draw stripe pattern
+        function drawStripes(color1, color2, direction) {
+            const stripeWidth = 60;
+            const totalStripes = 30;
+            
+            ctx.save();
+            
+            if (direction === 'clockwise' || direction === 'counterclockwise') {
+                // Rotational pattern
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.rotate(rotationAngle);
+                
+                for (let i = 0; i < 36; i++) {
+                    ctx.rotate((Math.PI * 2) / 36);
+                    ctx.fillStyle = i % 2 === 0 ? color1 : color2;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(Math.max(canvas.width, canvas.height), 0);
+                    ctx.lineTo(Math.max(canvas.width, canvas.height), stripeWidth);
+                    ctx.lineTo(0, 0);
+                    ctx.fill();
+                }
+            } else {
+                // Linear patterns
+                for (let i = -2; i < totalStripes; i++) {
+                    ctx.fillStyle = i % 2 === 0 ? color1 : color2;
+                    
+                    if (direction === 'right' || direction === 'left') {
+                        let x;
+                        if (direction === 'right') {
+                            x = (i * stripeWidth + offset) % (totalStripes * stripeWidth) - stripeWidth;
+                        } else {
+                            x = (i * stripeWidth - offset) % (totalStripes * stripeWidth) - stripeWidth;
+                        }
+                        if (x < -stripeWidth) x += totalStripes * stripeWidth;
+                        ctx.fillRect(x, 0, stripeWidth, canvas.height);
+                    } else {
+                        let y;
+                        if (direction === 'down') {
+                            y = (i * stripeWidth + offset) % (totalStripes * stripeWidth) - stripeWidth;
+                        } else {
+                            y = (i * stripeWidth - offset) % (totalStripes * stripeWidth) - stripeWidth;
+                        }
+                        if (y < -stripeWidth) y += totalStripes * stripeWidth;
+                        ctx.fillRect(0, y, canvas.width, stripeWidth);
+                    }
+                }
+            }
+            
+            ctx.restore();
+        }
+        
+        // Draw character pattern
+        function drawCharacters(direction) {
+            const emoji = ['🌟', '🎈', '🦋', '🌸', '🍀', '🌈', '🎵', '💫', '🐢', '🦊',
+                          '🎨', '🚀', '⭐', '🌺', '🦄', '🎪', '🎭', '🎪', '🌻', '🐝',
+                          '🦜', '🐠', '🎯', '🎲', '🎸', '🏀', '⚽', '🍎', '🍊', '🍉',
+                          '🎃', '🎄', '🎁', '🎂', '🍕', '🍔', '🌮', '🍣', '🍰', '🍩',
+                          '🚗', '✈️', '🚢', '🚂', '🚁', '🛸', '🏰', '🗽', '🌉', '🎡',
+                          '🐶', '🐱', '🐭', '🐹', '🐰', '🦁', '🐯', '🐨', '🐼', '🐸',
+                          '🌹', '🌷', '🌵', '🌴', '🍄', '🌾', '🍁', '🍂', '🌿', '☘️',
+                          '☀️', '🌙', '⭐', '🌠', '☁️', '⛈️', '❄️', '☃️', '🌊', '🔥',
+                          '💎', '💍', '👑', '🎀', '🎪', '🎭', '🎬', '🎤', '🎧', '🎮'];
+            const charSize = 40;
+            const spacingX = 50;
+            const spacingY = 50;
+            
+            ctx.save();
+            ctx.font = '32px Arial';
+            
+            if (direction === 'clockwise' || direction === 'counterclockwise') {
+                // Rotate entire screen of characters
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.rotate(rotationAngle);
+                
+                // Calculate grid dimensions for full screen
+                const gridCols = Math.ceil(Math.max(canvas.width, canvas.height) / spacingX) * 2;
+                const gridRows = Math.ceil(Math.max(canvas.width, canvas.height) / spacingY) * 2;
+                
+                // Draw grid of characters covering entire screen
+                for (let row = -gridRows/2; row <= gridRows/2; row++) {
+                    for (let col = -gridCols/2; col <= gridCols/2; col++) {
+                        const x = col * spacingX;
+                        const y = row * spacingY;
+                        const emojiIndex = Math.abs((row + gridRows) * gridCols + (col + gridCols)) % emoji.length;
+                        ctx.fillText(emoji[emojiIndex], x - 16, y + 16);
+                    }
+                }
+            } else {
+                // Calculate grid dimensions with smaller spacing for more characters
+                const cols = Math.ceil(canvas.width / spacingX) + 3;
+                const rows = Math.ceil(canvas.height / spacingY) + 1;
+                
+                if (direction === 'right' || direction === 'left') {
+                    // Horizontal movement
+                    const totalWidth = cols * spacingX;
+                    const normalizedOffset = ((offset % totalWidth) + totalWidth) % totalWidth;
+                    
+                    for (let row = 0; row < rows; row++) {
+                        for (let col = -2; col < cols + 2; col++) {
+                            let x;
+                            if (direction === 'right') {
+                                x = (col * spacingX + normalizedOffset) % totalWidth;
+                                if (x < -spacingX) x += totalWidth;
+                            } else {
+                                x = (col * spacingX - normalizedOffset) % totalWidth;
+                                if (x < -spacingX) x += totalWidth;
+                            }
+                            
+                            const y = row * spacingY + 25;
+                            const emojiIndex = (row * cols + col + 100) % emoji.length;
+                            
+                            // Only draw if within visible bounds
+                            if (x > -spacingX && x < canvas.width + spacingX) {
+                                ctx.fillText(emoji[Math.abs(emojiIndex) % emoji.length], x, y);
+                            }
+                        }
+                    }
+                } else {
+                    // Vertical movement
+                    const totalHeight = rows * spacingY;
+                    const normalizedOffset = ((offset % totalHeight) + totalHeight) % totalHeight;
+                    
+                    for (let col = 0; col < cols; col++) {
+                        for (let row = -2; row < rows + 2; row++) {
+                            const x = col * spacingX + 25;
+                            let y;
+                            
+                            if (direction === 'down') {
+                                y = (row * spacingY + normalizedOffset) % totalHeight;
+                                if (y < -spacingY) y += totalHeight;
+                            } else {
+                                y = (row * spacingY - normalizedOffset) % totalHeight;
+                                if (y < -spacingY) y += totalHeight;
+                            }
+                            
+                            const emojiIndex = (row * cols + col + 100) % emoji.length;
+                            
+                            // Only draw if within visible bounds
+                            if (y > -spacingY && y < canvas.height + spacingY) {
+                                ctx.fillText(emoji[Math.abs(emojiIndex) % emoji.length], x, y);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            ctx.restore();
+        }
+        
+        // Animation loop
+        function animate() {
+            if (!isRunning) return;
+            
+            const currentTime = Date.now();
+            const elapsed = (currentTime - startTime) / 1000;
+            
+            if (elapsed >= duration) {
+                stop();
+                return;
+            }
+            
+            // Update timer
+            const remaining = duration - Math.floor(elapsed);
+            const minutes = Math.floor(remaining / 60);
+            const seconds = remaining % 60;
+            timer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Get settings
+            const direction = document.getElementById('direction').value;
+            const pattern = document.getElementById('pattern').value;
+            
+            // Update position/rotation
+            const deltaSpeed = speed / 10;
+            if (direction === 'right') offset += deltaSpeed;
+            else if (direction === 'left') offset += deltaSpeed;
+            else if (direction === 'down') offset += deltaSpeed;
+            else if (direction === 'up') offset += deltaSpeed;
+            else if (direction === 'clockwise') rotationAngle += deltaSpeed * 0.01;
+            else if (direction === 'counterclockwise') rotationAngle -= deltaSpeed * 0.01;
+            
+            // Draw pattern
+            if (pattern === 'blackwhite') {
+                drawStripes('#000000', '#FFFFFF', direction);
+            } else if (pattern === 'redwhite') {
+                drawStripes('#FF0000', '#FFFFFF', direction);
+            } else if (pattern === 'characters') {
+                ctx.fillStyle = '#FFFFFF';
+                drawCharacters(direction);
+            }
+            
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // Start function
+        function start() {
+            if (isRunning) return;
+            
+            isRunning = true;
+            startTime = Date.now();
+            duration = parseInt(document.getElementById('duration').value);
+            offset = 0;
+            rotationAngle = 0;
+            timer.style.display = 'block';
+            
+            animate();
+        }
+        
+        // Stop function
+        function stop() {
+            isRunning = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            timer.style.display = 'none';
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        // Event listeners
+        startBtn.addEventListener('click', start);
+        stopBtn.addEventListener('click', stop);
+        
+        // Initial draw
+        ctx.fillStyle = '#333';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#666';
+        ctx.font = '24px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('設定を選択して「開始」をクリックしてください', canvas.width / 2, canvas.height / 2);
+    </script>
+</body>
+</html>
