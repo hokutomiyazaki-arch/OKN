@@ -98,7 +98,7 @@
             border-radius: 15px;
             backdrop-filter: blur(10px);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-            width: 320px;
+            width: 340px;
             max-width: 90vw;
             max-height: 85vh;
             transition: transform 0.3s ease;
@@ -138,7 +138,7 @@
         }
 
         #controls.hidden {
-            transform: translateX(-350px);
+            transform: translateX(-370px);
         }
 
         .control-group {
@@ -288,17 +288,52 @@
 
         .neuro-content h4 {
             color: #667eea;
+            margin: 15px 0 10px;
+            font-size: 13px;
+        }
+
+        .neuro-content h5 {
+            color: #764ba2;
             margin: 12px 0 8px;
-            font-size: 12px;
+            font-size: 11px;
+            font-weight: 600;
         }
 
         .neuro-content ul, .neuro-content ol {
             margin-left: 18px;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
         .neuro-content li {
-            margin-bottom: 4px;
+            margin-bottom: 5px;
+        }
+
+        .neuro-content p {
+            margin-bottom: 8px;
+        }
+
+        .pathway-box {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 2px solid #667eea;
+        }
+
+        .table-simple {
+            width: 100%;
+            margin: 10px 0;
+            font-size: 10px;
+        }
+
+        .table-simple td {
+            padding: 5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .table-simple td:first-child {
+            color: #667eea;
+            font-weight: bold;
         }
 
         .ref-note {
@@ -310,9 +345,14 @@
             border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
+        .highlight {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
         @media (max-height: 700px) {
             #controls {
-                font-size: 12px;
+                font-size: 11px;
                 padding: 15px;
             }
             
@@ -396,31 +436,72 @@
             <details class="neuro-info">
                 <summary><strong>🧠 OKNの神経科学的背景</strong></summary>
                 <div class="neuro-content">
-                    <h4>視運動性眼振（OKN）の神経メカニズム</h4>
-                    <p>OKNは脳幹反射と皮質制御の協働による半自動反射運動です：</p>
+                    <h4>1. OKNの二重神経経路</h4>
+                    
+                    <h5>① 下位反射経路（脳幹反射）</h5>
+                    <div class="pathway-box">
+                        網膜 → 外側膝状体(LGN) → <span class="highlight">視蓋前野(NOT)</span><br>
+                        → 内側前庭核(MVN) → 小脳片葉(flocculus)<br>
+                        → 外転神経核 → 眼外筋運動(slow phase)
+                    </div>
+                    <p>※新生児や昏睡患者でも誘発される純粋な反射系</p>
+                    
+                    <h5>② 皮質経路（上位制御）</h5>
+                    <div class="pathway-box">
+                        網膜 → LGN → V1 → V2/V3 → <span class="highlight">MT/MST野</span><br>
+                        → NOT/小脳片葉/前庭核 → 眼球運動出力
+                    </div>
+                    <p>※動きの方向・速度を解析し、OKNを修正する皮質中枢</p>
+                    
+                    <h4>2. 皮質が果たす3つの主要機能</h4>
+                    <table class="table-simple">
+                        <tr>
+                            <td>動きの方向検出</td>
+                            <td>MT/MST野がOKN方向と速度を調整</td>
+                        </tr>
+                        <tr>
+                            <td>自己運動感覚統合</td>
+                            <td>MST/PIVC(前庭皮質)が前庭入力と統合</td>
+                        </tr>
+                        <tr>
+                            <td>意識的制御・抑制</td>
+                            <td>前頭眼野(FEF)/上丘(SC)が随意制御</td>
+                        </tr>
+                    </table>
+                    
+                    <h4>3. 中心固定点凝視の神経生理学的効果</h4>
+                    
+                    <p><strong>OKN反射を意図的に抑制すると：</strong></p>
+                    <ol>
+                        <li><span class="highlight">脳幹OKN発火の抑制</span><br>
+                            前庭眼運動系のトーンが低下し、反射的姿勢調整が停止</li>
+                        <li><span class="highlight">前頭眼野(FEF)の活動増強</span><br>
+                            抑制的注意制御が強化され、前頭葉の抑制系トレーニング効果</li>
+                        <li><span class="highlight">小脳前庭ループの再チューニング</span><br>
+                            姿勢安定化システムのゲインがリセットされ、バランスが変動</li>
+                        <li><span class="highlight">視覚的重力参照の再構成</span><br>
+                            内的な垂直参照(SVV)が優位になり、自己内基準を再構築</li>
+                    </ol>
+                    
+                    <h4>4. 時間依存性の変化</h4>
                     <ul>
-                        <li><strong>脳幹反射経路：</strong>網膜→視蓋前野（NOT）→前庭核→小脳片葉→眼外筋</li>
-                        <li><strong>皮質経路：</strong>V1→MT/MST野→運動方向・速度の認識と調整</li>
-                        <li><strong>前頭眼野（FEF）：</strong>随意的な視線固定・OKN抑制</li>
+                        <li><strong>短時間OKN（&lt;1秒）</strong>：純粋な脳幹反射</li>
+                        <li><strong>持続OKN（&gt;3-5秒）</strong>：MT/MST野の皮質制御が必要</li>
+                        <li><strong>MST損傷時</strong>：短時間OKNは残存、長時間OKNは消失</li>
                     </ul>
                     
-                    <h4>同心円OKNと姿勢制御</h4>
-                    <p><strong>収束型刺激：</strong></p>
-                    <ol>
-                        <li>輻輳反応（両眼内旋）を誘発</li>
-                        <li>屈筋系運動プログラムが活性化</li>
-                        <li>抗重力筋（伸筋群）への促通が抑制</li>
-                        <li>重心が前方化し姿勢不安定化</li>
-                    </ol>
+                    <h4>5. 臨床的応用</h4>
+                    <p><strong>中心凝視によるOKN抑制訓練の効果：</strong></p>
+                    <ul>
+                        <li>前庭過敏（視覚動揺型めまい）の抑制</li>
+                        <li>姿勢制御リセット（postural recalibration）</li>
+                        <li>内的垂直参照（SVV/SVH）の安定化</li>
+                        <li>トップダウン制御能力の強化</li>
+                    </ul>
                     
-                    <p><strong>発散型刺激：</strong></p>
-                    <ol>
-                        <li>開散反応を誘発</li>
-                        <li>伸筋促通・重心後退</li>
-                        <li>姿勢安定化の方向へ作用</li>
-                    </ol>
-                    
-                    <p class="ref-note">※視覚-前庭-体幹統合系における生理的相反作用に基づく</p>
+                    <p class="ref-note">
+                        <strong>結論：</strong>OKNは「反射でありながら皮質統合により意識的に変調可能な半自動反射運動」であり、中心固定点の凝視は「無意識の視運動反射を意識的制御下に置く訓練」として、脳幹→小脳→前頭葉の機能階層を再構成する神経的リセット行為である。
+                    </p>
                 </div>
             </details>
         </div>
