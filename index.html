@@ -91,7 +91,7 @@
         /* コントロールパネルのスクロール対応 */
         #controls {
             position: fixed;
-            top: 20px;
+            top: env(safe-area-inset-top, 20px);
             left: 20px;
             background: rgba(0, 0, 0, 0.95);
             padding: 20px;
@@ -100,7 +100,7 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
             width: 340px;
             max-width: 90vw;
-            max-height: 85vh;
+            max-height: calc(85vh - env(safe-area-inset-top, 20px));
             transition: transform 0.3s ease;
             z-index: 1000;
             
@@ -139,6 +139,40 @@
 
         #controls.hidden {
             transform: translateX(-370px);
+        }
+
+        /* パネル表示ボタン - iPhone対応の位置調整 */
+        #toggleBtn {
+            position: fixed;
+            bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+            left: 20px;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            z-index: 1001;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        #toggleBtn:active {
+            transform: scale(0.95);
+        }
+
+        #toggleBtn.show-panel {
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.9) 0%, rgba(67, 160, 71, 0.9) 100%);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3); }
+            50% { box-shadow: 0 4px 25px rgba(76, 175, 80, 0.6); }
+            100% { box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3); }
         }
 
         .control-group {
@@ -222,21 +256,9 @@
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         }
 
-        #toggleBtn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 10px 15px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 8px;
-            z-index: 1001;
-            font-size: 12px;
-        }
-
         #timer {
             position: fixed;
-            bottom: 30px;
+            bottom: calc(30px + env(safe-area-inset-bottom, 0px));
             right: 30px;
             font-size: 36px;
             font-weight: bold;
@@ -350,6 +372,7 @@
             font-weight: bold;
         }
 
+        /* iPhone SE等の小画面対応 */
         @media (max-height: 700px) {
             #controls {
                 font-size: 11px;
@@ -358,6 +381,28 @@
             
             .control-group {
                 margin-bottom: 10px;
+            }
+            
+            #timer {
+                font-size: 28px;
+                padding: 10px 20px;
+            }
+        }
+
+        /* iPhone横画面対応 */
+        @media (max-height: 450px) {
+            #controls {
+                max-height: calc(90vh - env(safe-area-inset-top, 20px));
+            }
+            
+            #toggleBtn {
+                bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+            }
+            
+            #timer {
+                bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+                font-size: 24px;
+                padding: 8px 15px;
             }
         }
     </style>
@@ -429,8 +474,8 @@
             
             <div class="info">
                 <strong>使用方法:</strong><br>
-                設定を調整後、「開始」をクリックして検査を始めてください。<br>
-                「パネル表示」で設定パネルの表示/非表示を切り替えられます。
+                設定を調整後、「開始」をクリックすると自動的にパネルが閉じて検査が始まります。<br>
+                検査中は左下のボタンでパネルの表示/非表示を切り替えられます。
             </div>
 
             <details class="neuro-info">
@@ -507,7 +552,7 @@
         </div>
     </div>
     
-    <button id="toggleBtn">パネル非表示</button>
+    <button id="toggleBtn" class="show-panel">パネル表示</button>
     
     <div id="timer">00:00</div>
 
@@ -580,7 +625,9 @@
         // Toggle panel visibility
         toggleBtn.addEventListener('click', () => {
             controls.classList.toggle('hidden');
-            toggleBtn.textContent = controls.classList.contains('hidden') ? 'パネル表示' : 'パネル非表示';
+            const isHidden = controls.classList.contains('hidden');
+            toggleBtn.textContent = isHidden ? 'パネル表示' : 'パネル非表示';
+            toggleBtn.className = isHidden ? 'show-panel' : '';
         });
         
         // Fixation point control
@@ -796,6 +843,12 @@
         function start() {
             if (isRunning) return;
             
+            // 自動的にパネルを閉じる
+            controls.classList.add('hidden');
+            toggleBtn.textContent = 'パネル表示';
+            toggleBtn.className = 'show-panel';
+            
+            // モバイルでフルスクリーン化を試みる
             if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
                 enterFullscreen();
             }
@@ -825,6 +878,11 @@
             
             // Hide fixation point
             updateFixationPoint('none');
+            
+            // 停止時にパネルを自動的に表示
+            controls.classList.remove('hidden');
+            toggleBtn.textContent = 'パネル非表示';
+            toggleBtn.className = '';
         }
         
         // Event listeners
