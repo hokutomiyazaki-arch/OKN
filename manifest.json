@@ -1,100 +1,1189 @@
-{
-  "name": "OKN検査 - Functional Neuro Training",
-  "short_name": "OKN検査",
-  "description": "Optokinetic Nystagmus（視運動性眼振）検査アプリケーション。眼球運動の評価と訓練に使用できます。",
-  "start_url": "/OKN/",
-  "scope": "/OKN/",
-  "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#667eea",
-  "orientation": "any",
-  "categories": ["medical", "health"],
-  "lang": "ja",
-  "dir": "ltr",
-  "prefer_related_applications": false,
-  "icons": [
-    {
-      "src": "FNT512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "FNT512.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "FNT512.png",
-      "sizes": "256x256",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "FNT512.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "FNT512.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "FNT512.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "FNT512.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "FNT512.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "FNT512.png",
-      "sizes": "48x48",
-      "type": "image/png",
-      "purpose": "any maskable"
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#667eea">
+  <meta name="application-name" content="OKN検査">
+  <meta name="apple-mobile-web-app-title" content="OKN検査">
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- アイコン -->
+  <link rel="icon" href="FNT512.png">
+  <link rel="apple-touch-icon" href="FNT512.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="FNT512.png">
+
+  <title>OKN検査 - Optokinetic Nystagmus</title>
+
+  <style>
+    /* =============================
+       RESET & BASE
+    ============================= */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-  ],
-  "screenshots": [
-    {
-      "src": "screenshot1.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "label": "OKN検査メイン画面"
-    },
-    {
-      "src": "screenshot2.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "label": "全画面表示モード"
+
+    :root {
+      --primary: #667eea;
+      --primary-dark: #764ba2;
+      --accent: #4CAF50;
+      --danger: #e74c3c;
+      --bg: #0d0d0d;
+      --surface: rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.12);
+      --text: #f0f0f0;
+      --muted: #888;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
-  ],
-  "shortcuts": [
-    {
-      "name": "検査開始",
-      "short_name": "開始",
-      "description": "OKN検査をすぐに開始",
-      "url": "/OKN/?action=start",
-      "icons": [
-        {
-          "src": "FNT512.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
+
+    html {
+      height: 100%;
+      overflow: hidden;
     }
-  ]
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Kaku Gothic ProN',
+                   'Noto Sans JP', 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      position: fixed;
+      top: 0;
+      left: 0;
+      /* グローバルにタッチ操作を制限（スクロール防止） */
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    /* =============================
+       SPLASH SCREEN
+    ============================= */
+    #splash {
+      position: fixed;
+      inset: 0;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.6s ease, visibility 0.6s ease;
+      gap: 16px;
+      padding: 20px;
+    }
+
+    #splash.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    #splash .splash-logo {
+      width: 120px;
+      height: 120px;
+      object-fit: contain;
+      animation: splashPulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes splashPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+
+    #splash .splash-brand {
+      font-size: clamp(1rem, 4vw, 1.4rem);
+      font-weight: 700;
+      color: #333;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+      text-align: center;
+    }
+
+    #splash .splash-app-title {
+      font-size: clamp(1.4rem, 6vw, 2rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center;
+    }
+
+    #splash .splash-copy {
+      font-size: 0.78rem;
+      color: #999;
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    /* =============================
+       MAIN APP WRAPPER
+    ============================= */
+    #app {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding-top: var(--safe-top);
+      padding-bottom: var(--safe-bottom);
+    }
+
+    /* =============================
+       HEADER
+    ============================= */
+    #header {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 12px 60px 10px;
+      background: linear-gradient(180deg, rgba(13,13,13,1) 0%, rgba(13,13,13,0.9) 100%);
+      position: relative;
+      z-index: 10;
+    }
+
+    #header .logo {
+      height: 36px;
+      width: auto;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    #header h1 {
+      font-size: clamp(1rem, 4vw, 1.5rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      white-space: nowrap;
+    }
+
+    /* =============================
+       NEURO INFO BANNER (タイトル下)
+    ============================= */
+    #neuro-banner {
+      flex-shrink: 0;
+      background: rgba(102,126,234,0.08);
+      border-bottom: 1px solid rgba(102,126,234,0.2);
+      padding: 8px 16px;
+      font-size: 0.72rem;
+      color: #aaa;
+      line-height: 1.5;
+      text-align: center;
+      /* iOSスクロール対応 */
+      touch-action: auto !important;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #neuro-banner strong {
+      color: var(--primary);
+    }
+
+    /* =============================
+       CANVAS AREA (全画面)
+    ============================= */
+    #canvas-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    #canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      inset: 0;
+    }
+
+    /* 中心固定点オーバーレイ */
+    #fixation-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 5;
+      display: none;
+    }
+
+    #fixation-overlay.active {
+      display: block;
+    }
+
+    #fixation-overlay .dot {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 18px;
+      height: 18px;
+      background: #FF3B30;
+      border-radius: 50%;
+      box-shadow: 0 0 12px rgba(255,59,48,0.7);
+    }
+
+    #fixation-overlay .cross::before,
+    #fixation-overlay .cross::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      background: #FF3B30;
+      box-shadow: 0 0 8px rgba(255,59,48,0.6);
+    }
+
+    #fixation-overlay .cross::before {
+      width: 36px;
+      height: 4px;
+      transform: translate(-50%, -50%);
+    }
+
+    #fixation-overlay .cross::after {
+      width: 4px;
+      height: 36px;
+      transform: translate(-50%, -50%);
+    }
+
+    /* =============================
+       BOTTOM BAR
+    ============================= */
+    #bottom-bar {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      background: rgba(13,13,13,0.97);
+      border-top: 1px solid var(--border);
+      gap: 8px;
+      z-index: 10;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: 20px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.15s;
+      touch-action: manipulation !important;
+      font-size: 0.85rem;
+      padding: 9px 18px;
+      white-space: nowrap;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn:active {
+      transform: scale(0.93);
+      opacity: 0.85;
+    }
+
+    .btn:disabled {
+      opacity: 0.38;
+      pointer-events: none;
+    }
+
+    .btn-start {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      flex: 1;
+    }
+
+    .btn-stop {
+      background: var(--danger);
+      color: #fff;
+      flex: 1;
+    }
+
+    .btn-menu {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      flex-shrink: 0;
+    }
+
+    /* タイマー */
+    #timer {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--accent);
+      font-family: 'Courier New', monospace;
+      background: rgba(0,0,0,0.6);
+      padding: 6px 12px;
+      border-radius: 8px;
+      display: none;
+      flex-shrink: 0;
+      min-width: 64px;
+      text-align: center;
+    }
+
+    /* =============================
+       COPYRIGHT (最下部)
+    ============================= */
+    #copyright {
+      flex-shrink: 0;
+      text-align: center;
+      font-size: 0.65rem;
+      color: var(--muted);
+      padding: 4px 8px;
+      background: rgba(13,13,13,1);
+      letter-spacing: 0.04em;
+    }
+
+    /* =============================
+       SIDE MENU (サイドパネル)
+    ============================= */
+    #menu-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+      touch-action: auto !important;
+    }
+
+    #menu-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    #side-menu {
+      position: fixed;
+      top: 0;
+      right: -360px;
+      width: 320px;
+      max-width: 88vw;
+      height: 100%;
+      height: 100dvh;
+      background: #111;
+      border-left: 1px solid var(--border);
+      z-index: 101;
+      transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
+      display: flex;
+      flex-direction: column;
+      padding-top: var(--safe-top);
+      padding-bottom: var(--safe-bottom);
+      /* スクロール */
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y !important;
+    }
+
+    #side-menu * {
+      touch-action: auto !important;
+    }
+
+    #side-menu.open {
+      right: 0;
+    }
+
+    .menu-header {
+      padding: 20px 20px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .menu-header h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .menu-close {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      touch-action: manipulation !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .menu-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+    }
+
+    .setting-group {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .setting-group label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .setting-group select,
+    .setting-group input[type="range"] {
+      width: 100%;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      color: var(--text);
+      font-size: 0.9rem;
+      padding: 8px 10px;
+      -webkit-appearance: none;
+      appearance: none;
+      touch-action: manipulation !important;
+    }
+
+    .setting-group select option {
+      background: #1a1a1a;
+    }
+
+    .setting-group input[type="range"] {
+      padding: 4px 0;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    .speed-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .speed-row input {
+      flex: 1;
+    }
+
+    .speed-val {
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 0.9rem;
+      min-width: 28px;
+      text-align: right;
+    }
+
+    /* 神経科学的説明 (メニュー内) */
+    .neuro-detail {
+      background: rgba(102,126,234,0.07);
+      border: 1px solid rgba(102,126,234,0.2);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .neuro-detail summary {
+      padding: 12px 14px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--primary);
+      list-style: none;
+      touch-action: manipulation !important;
+    }
+
+    .neuro-detail summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .neuro-detail summary::after {
+      content: ' ▶';
+      font-size: 0.7rem;
+    }
+
+    .neuro-detail[open] summary::after {
+      content: ' ▼';
+    }
+
+    .neuro-body {
+      padding: 0 14px 14px;
+      font-size: 0.75rem;
+      line-height: 1.65;
+      color: #bbb;
+    }
+
+    .neuro-body h4 {
+      color: var(--primary);
+      font-size: 0.8rem;
+      margin: 12px 0 6px;
+    }
+
+    .neuro-body ul,
+    .neuro-body ol {
+      margin-left: 16px;
+      margin-bottom: 8px;
+    }
+
+    .neuro-body li {
+      margin-bottom: 4px;
+    }
+
+    .neuro-body .pathway {
+      background: rgba(255,255,255,0.04);
+      border-left: 2px solid var(--primary);
+      padding: 8px 10px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      margin: 6px 0;
+    }
+
+    .hl {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* =============================
+       PWA INSTALL BUTTON
+    ============================= */
+    #install-btn {
+      position: fixed;
+      bottom: calc(80px + var(--safe-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 11px 22px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      border: none;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      z-index: 50;
+      box-shadow: 0 4px 20px rgba(102,126,234,0.45);
+      display: none;
+      white-space: nowrap;
+      touch-action: manipulation !important;
+      animation: floatUp 0.4s ease;
+    }
+
+    @keyframes floatUp {
+      from { opacity: 0; transform: translateX(-50%) translateY(16px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    /* =============================
+       UPDATE TOAST
+    ============================= */
+    #update-toast {
+      position: fixed;
+      bottom: calc(72px + var(--safe-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+      background: #222;
+      border: 1px solid var(--primary);
+      border-radius: 12px;
+      padding: 12px 18px;
+      display: none;
+      gap: 12px;
+      align-items: center;
+      z-index: 200;
+      font-size: 0.82rem;
+      color: var(--text);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+      white-space: nowrap;
+    }
+
+    #update-toast button {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 5px 12px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      touch-action: manipulation !important;
+    }
+
+    /* =============================
+       MEDIA QUERIES
+    ============================= */
+    @media (max-height: 600px) {
+      #neuro-banner { display: none; }
+      #header { padding: 8px 56px 6px; }
+      #header h1 { font-size: 0.95rem; }
+    }
+
+    @media (max-width: 380px) {
+      .btn { font-size: 0.78rem; padding: 8px 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===========================
+     SPLASH SCREEN
+=========================== -->
+<div id="splash">
+  <img src="FNT512.png" alt="FNT Logo" class="splash-logo" onerror="this.style.display='none'">
+  <div class="splash-brand">Functional Neuro Training</div>
+  <div class="splash-app-title">OKN検査</div>
+  <div class="splash-copy">© 2024 Functional Neuro Training. All rights reserved.</div>
+</div>
+
+<!-- ===========================
+     MAIN APP
+=========================== -->
+<div id="app">
+
+  <!-- ヘッダー -->
+  <header id="header">
+    <img src="FNT512-transparent.png" alt="FNT" class="logo" onerror="this.style.display='none'">
+    <h1>OKN検査</h1>
+  </header>
+
+  <!-- 神経科学的説明バナー (タイトル直下) -->
+  <div id="neuro-banner">
+    <strong>🧠 視運動性眼振（OKN）とは：</strong>
+    動く視覚刺激が網膜→外側膝状体→MT/MST野→前庭核を経由し、
+    脳幹と大脳皮質の二重経路で眼球運動を制御します。
+    中心固定点の凝視は前頭眼野（FEF）によるトップダウン制御能力を強化します。
+  </div>
+
+  <!-- キャンバスエリア (全画面) -->
+  <div id="canvas-wrap">
+    <canvas id="canvas"></canvas>
+    <!-- 中心固定点 -->
+    <div id="fixation-overlay">
+      <div id="fixation-el"></div>
+    </div>
+  </div>
+
+  <!-- ボトムバー -->
+  <div id="bottom-bar">
+    <button class="btn btn-start" id="startBtn">▶ 開始</button>
+    <button class="btn btn-stop" id="stopBtn" disabled>■ 停止</button>
+    <div id="timer">00:00</div>
+    <button class="btn btn-menu" id="menuBtn">☰ 設定</button>
+  </div>
+
+  <!-- 著作権 (最下部) -->
+  <div id="copyright">© 2024 Functional Neuro Training. All rights reserved.</div>
+
+</div><!-- /#app -->
+
+<!-- ===========================
+     SIDE MENU
+=========================== -->
+<div id="menu-overlay"></div>
+<nav id="side-menu" role="dialog" aria-label="設定メニュー">
+  <div class="menu-header">
+    <h2>⚙️ 検査設定</h2>
+    <button class="menu-close" id="menuClose" aria-label="閉じる">✕</button>
+  </div>
+
+  <div class="menu-body">
+
+    <div class="setting-group">
+      <label for="direction">刺激方向</label>
+      <select id="direction">
+        <option value="right">右方向 →</option>
+        <option value="left">左方向 ←</option>
+        <option value="up">上方向 ↑</option>
+        <option value="down">下方向 ↓</option>
+        <option value="clockwise">右回転 (tOKN) ↻</option>
+        <option value="counterclockwise">左回転 (tOKN) ↺</option>
+      </select>
+    </div>
+
+    <div class="setting-group">
+      <label for="pattern">刺激パターン</label>
+      <select id="pattern">
+        <option value="blackwhite">ストライプ 黒白</option>
+        <option value="redwhite">ストライプ 赤白</option>
+        <option value="characters">キャラクター</option>
+        <option value="zodiac">干支</option>
+      </select>
+    </div>
+
+    <div class="setting-group">
+      <label>速度</label>
+      <div class="speed-row">
+        <input type="range" id="speed" min="10" max="200" value="50" step="10">
+        <span class="speed-val" id="speedVal">50</span>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <label for="duration">刺激時間</label>
+      <select id="duration">
+        <option value="30">30秒</option>
+        <option value="60" selected>1分</option>
+        <option value="120">2分</option>
+        <option value="180">3分</option>
+        <option value="300">5分</option>
+        <option value="600">10分</option>
+      </select>
+    </div>
+
+    <div class="setting-group">
+      <label for="fixation">中心固定点</label>
+      <select id="fixation">
+        <option value="none">なし</option>
+        <option value="dot">点（●）</option>
+        <option value="cross">十字（＋）</option>
+      </select>
+    </div>
+
+    <!-- 神経科学的詳細 -->
+    <details class="neuro-detail">
+      <summary>🧠 OKNの神経科学的背景</summary>
+      <div class="neuro-body">
+        <h4>1. OKNの二重神経経路</h4>
+        <p><strong>① 下位反射経路（脳幹反射）</strong></p>
+        <div class="pathway">
+          網膜 → 外側膝状体(LGN) → <span class="hl">視蓋前野(NOT)</span><br>
+          → 内側前庭核(MVN) → 小脳片葉(flocculus)<br>
+          → 外転神経核 → 眼外筋運動(slow phase)
+        </div>
+        <p><strong>② 皮質経路（上位制御）</strong></p>
+        <div class="pathway">
+          網膜 → LGN → V1 → V2/V3 → <span class="hl">MT/MST野</span><br>
+          → NOT/小脳片葉/前庭核 → 眼球運動出力
+        </div>
+
+        <h4>2. 中心固定点凝視の神経生理学的効果</h4>
+        <ol>
+          <li><span class="hl">脳幹OKN発火の抑制</span>：前庭眼運動系トーンの低下</li>
+          <li><span class="hl">前頭眼野(FEF)の活動増強</span>：抑制的注意制御の強化</li>
+          <li><span class="hl">小脳前庭ループの再チューニング</span>：バランス安定化ゲインのリセット</li>
+          <li><span class="hl">視覚的重力参照の再構成</span>：内的垂直参照(SVV)の再構築</li>
+        </ol>
+
+        <h4>3. 臨床的応用</h4>
+        <ul>
+          <li>前庭過敏（視覚動揺型めまい）の抑制</li>
+          <li>姿勢制御リセット</li>
+          <li>内的垂直参照（SVV/SVH）の安定化</li>
+          <li>トップダウン制御能力の強化</li>
+        </ul>
+      </div>
+    </details>
+
+  </div><!-- /.menu-body -->
+</nav>
+
+<!-- PWAインストールボタン -->
+<button id="install-btn">📲 アプリとしてインストール</button>
+
+<!-- 更新通知 -->
+<div id="update-toast">
+  <span>新しいバージョンが利用可能です</span>
+  <button id="update-btn">更新</button>
+</div>
+
+<script>
+"use strict";
+
+/* ============================
+   DOM
+============================ */
+const $canvas     = document.getElementById('canvas');
+const $ctx        = $canvas.getContext('2d');
+const $startBtn   = document.getElementById('startBtn');
+const $stopBtn    = document.getElementById('stopBtn');
+const $menuBtn    = document.getElementById('menuBtn');
+const $menuClose  = document.getElementById('menuClose');
+const $menuOverlay= document.getElementById('menu-overlay');
+const $sideMenu   = document.getElementById('side-menu');
+const $timer      = document.getElementById('timer');
+const $splash     = document.getElementById('splash');
+const $fixOl      = document.getElementById('fixation-overlay');
+const $fixEl      = document.getElementById('fixation-el');
+const $speedSlider= document.getElementById('speed');
+const $speedVal   = document.getElementById('speedVal');
+const $fixSel     = document.getElementById('fixation');
+const $installBtn = document.getElementById('install-btn');
+const $updateToast= document.getElementById('update-toast');
+const $updateBtn  = document.getElementById('update-btn');
+
+/* ============================
+   STATE
+============================ */
+let animId    = null;
+let isRunning = false;
+let startTime = null;
+let offset    = 0;
+let rotAngle  = 0;
+let speed     = 50;
+let duration  = 60;
+
+/* ============================
+   CANVAS RESIZE
+============================ */
+function resizeCanvas() {
+  const wrap = $canvas.parentElement;
+  $canvas.width  = wrap.clientWidth  || window.innerWidth;
+  $canvas.height = wrap.clientHeight || (window.innerHeight - 160);
 }
+
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 200));
+resizeCanvas();
+
+/* ============================
+   SPLASH SCREEN
+============================ */
+function showSplash(ms) {
+  return new Promise(resolve => {
+    $splash.classList.remove('hidden');
+    setTimeout(() => {
+      $splash.classList.add('hidden');
+      resolve();
+    }, ms);
+  });
+}
+
+/* ============================
+   MENU OPEN / CLOSE
+============================ */
+function openMenu() {
+  $sideMenu.classList.add('open');
+  $menuOverlay.classList.add('open');
+}
+
+function closeMenu() {
+  $sideMenu.classList.remove('open');
+  $menuOverlay.classList.remove('open');
+}
+
+$menuBtn.addEventListener('click', openMenu);
+$menuClose.addEventListener('click', closeMenu);
+$menuOverlay.addEventListener('click', closeMenu);
+
+/* ============================
+   SPEED SLIDER
+============================ */
+$speedSlider.addEventListener('input', e => {
+  speed = parseInt(e.target.value);
+  $speedVal.textContent = speed;
+});
+
+/* ============================
+   FIXATION POINT
+============================ */
+function updateFixation(type) {
+  if (!type || type === 'none' || !isRunning) {
+    $fixOl.classList.remove('active');
+    $fixEl.className = '';
+    return;
+  }
+  $fixOl.classList.add('active');
+  $fixEl.className = type; // 'dot' or 'cross'
+}
+
+$fixSel.addEventListener('change', () => updateFixation($fixSel.value));
+
+/* ============================
+   DRAW: STRIPES
+============================ */
+function drawStripes(c1, c2, dir) {
+  const sw = 60;
+  const n  = Math.ceil(Math.max($canvas.width, $canvas.height) / sw) + 4;
+
+  $ctx.save();
+
+  if (dir === 'clockwise' || dir === 'counterclockwise') {
+    $ctx.translate($canvas.width / 2, $canvas.height / 2);
+    $ctx.rotate(rotAngle);
+    const r = Math.hypot($canvas.width, $canvas.height);
+    for (let i = 0; i < 36; i++) {
+      $ctx.rotate((Math.PI * 2) / 36);
+      $ctx.fillStyle = i % 2 === 0 ? c1 : c2;
+      $ctx.beginPath();
+      $ctx.moveTo(0, 0);
+      $ctx.lineTo(r, 0);
+      $ctx.lineTo(r, sw);
+      $ctx.lineTo(0, 0);
+      $ctx.fill();
+    }
+  } else {
+    for (let i = -2; i < n; i++) {
+      $ctx.fillStyle = i % 2 === 0 ? c1 : c2;
+      const total = n * sw;
+
+      if (dir === 'right' || dir === 'left') {
+        let x = dir === 'right'
+          ? (i * sw + offset) % total - sw
+          : (i * sw - offset % total + total) % total - sw;
+        if (x < -sw) x += total;
+        $ctx.fillRect(x, 0, sw, $canvas.height);
+      } else {
+        let y = dir === 'down'
+          ? (i * sw + offset) % total - sw
+          : (i * sw - offset % total + total) % total - sw;
+        if (y < -sw) y += total;
+        $ctx.fillRect(0, y, $canvas.width, sw);
+      }
+    }
+  }
+  $ctx.restore();
+}
+
+/* ============================
+   DRAW: CHARACTERS / ZODIAC
+============================ */
+const ZODIAC_EMOJI = ['🐭','🐮','🐯','🐰','🐲','🐍','🐴','🐏','🐵','🐓','🐕','🐗'];
+const CHAR_EMOJI   = ['🌟','🎈','🦋','🌸','🍀','🌈','🎵','💫','🐢','🦊',
+                      '🎨','🚀','⭐','🌺','🦄','🎪','🎭','🌻','🐝','🦜'];
+
+function drawChars(dir, isZodiac) {
+  const emojis = isZodiac ? ZODIAC_EMOJI : CHAR_EMOJI;
+  const sp = 56;
+
+  $ctx.save();
+  $ctx.font = '30px Arial';
+  $ctx.textBaseline = 'middle';
+
+  if (dir === 'clockwise' || dir === 'counterclockwise') {
+    $ctx.translate($canvas.width / 2, $canvas.height / 2);
+    $ctx.rotate(rotAngle);
+    const half = Math.ceil(Math.hypot($canvas.width, $canvas.height) / sp) + 2;
+    for (let r = -half; r <= half; r++) {
+      for (let c = -half; c <= half; c++) {
+        const idx = Math.abs(r * 7 + c) % emojis.length;
+        $ctx.fillText(emojis[idx], c * sp - 14, r * sp);
+      }
+    }
+  } else {
+    const cols  = Math.ceil($canvas.width  / sp) + 4;
+    const rows  = Math.ceil($canvas.height / sp) + 4;
+    const totalW = cols * sp;
+    const totalH = rows * sp;
+
+    for (let r = -1; r < rows + 1; r++) {
+      for (let c = -1; c < cols + 1; c++) {
+        let x, y;
+        if (dir === 'right' || dir === 'left') {
+          const raw = dir === 'right'
+            ? (c * sp + offset) % totalW
+            : ((c * sp - offset) % totalW + totalW) % totalW;
+          x = raw;
+          y = r * sp + sp / 2;
+          if (x < -sp || x > $canvas.width + sp) continue;
+        } else {
+          x = c * sp + sp / 2;
+          const raw = dir === 'down'
+            ? (r * sp + offset) % totalH
+            : ((r * sp - offset) % totalH + totalH) % totalH;
+          y = raw;
+          if (y < -sp || y > $canvas.height + sp) continue;
+        }
+        const idx = Math.abs(r * cols + c) % emojis.length;
+        $ctx.fillText(emojis[idx], x - 14, y);
+      }
+    }
+  }
+  $ctx.restore();
+}
+
+/* ============================
+   ANIMATION LOOP
+============================ */
+function drawIdle() {
+  $ctx.fillStyle = '#111';
+  $ctx.fillRect(0, 0, $canvas.width, $canvas.height);
+  $ctx.fillStyle = '#555';
+  $ctx.font = `${Math.min(16, $canvas.width / 20)}px sans-serif`;
+  $ctx.textAlign = 'center';
+  $ctx.textBaseline = 'middle';
+  $ctx.fillText('▶ 開始 を押してトレーニング開始', $canvas.width / 2, $canvas.height / 2);
+  $ctx.textAlign = 'left';
+  $ctx.textBaseline = 'alphabetic';
+}
+
+function animate() {
+  if (!isRunning) return;
+
+  const elapsed = (Date.now() - startTime) / 1000;
+  if (elapsed >= duration) { stop(); return; }
+
+  const remaining = duration - Math.floor(elapsed);
+  $timer.textContent =
+    `${String(Math.floor(remaining / 60)).padStart(2,'0')}:${String(remaining % 60).padStart(2,'0')}`;
+
+  $ctx.fillStyle = '#000';
+  $ctx.fillRect(0, 0, $canvas.width, $canvas.height);
+
+  const dir     = document.getElementById('direction').value;
+  const pattern = document.getElementById('pattern').value;
+  const delta   = speed / 10;
+
+  if      (dir === 'clockwise')        rotAngle += delta * 0.01;
+  else if (dir === 'counterclockwise') rotAngle -= delta * 0.01;
+  else                                 offset   += delta;
+
+  switch (pattern) {
+    case 'blackwhite': drawStripes('#000','#fff', dir); break;
+    case 'redwhite':   drawStripes('#e00','#fff', dir); break;
+    case 'characters': drawChars(dir, false); break;
+    case 'zodiac':     drawChars(dir, true);  break;
+  }
+
+  animId = requestAnimationFrame(animate);
+}
+
+/* ============================
+   START / STOP
+============================ */
+function start() {
+  if (isRunning) return;
+
+  // メニューを閉じる
+  closeMenu();
+
+  isRunning = true;
+  startTime = Date.now();
+  duration  = parseInt(document.getElementById('duration').value);
+  offset    = 0;
+  rotAngle  = 0;
+
+  $startBtn.disabled = true;
+  $stopBtn.disabled  = false;
+  $timer.style.display = 'block';
+
+  updateFixation($fixSel.value);
+  animate();
+}
+
+function stop() {
+  isRunning = false;
+  if (animId) { cancelAnimationFrame(animId); animId = null; }
+
+  $startBtn.disabled = false;
+  $stopBtn.disabled  = true;
+  $timer.style.display = 'none';
+
+  updateFixation('none');
+  drawIdle();
+}
+
+$startBtn.addEventListener('click', start);
+$stopBtn.addEventListener('click', stop);
+
+/* ============================
+   KEYBOARD SHORTCUT
+============================ */
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    isRunning ? stop() : start();
+  }
+});
+
+/* ============================
+   PREVENT HORIZONTAL SCROLL
+============================ */
+document.addEventListener('touchmove', e => {
+  // サイドメニュー内は縦スクロールを許可
+  if ($sideMenu.contains(e.target)) return;
+  e.preventDefault();
+}, { passive: false });
+
+/* ============================
+   INIT
+============================ */
+window.addEventListener('load', async () => {
+  resizeCanvas();
+
+  // スプラッシュ表示
+  await showSplash(2200);
+
+  // アイドル画面描画
+  drawIdle();
+
+  // アドレスバー非表示（モバイル）
+  setTimeout(() => window.scrollTo(0, 1), 100);
+});
+
+/* ============================
+   SERVICE WORKER & PWA
+============================ */
+let pendingWorker = null;
+
+// claudeusercontent.com など開発プレビュー環境ではSW登録をスキップ
+const isPreviewEnv = location.hostname.includes('claudeusercontent.com') ||
+                     location.hostname === 'localhost' ||
+                     location.protocol === 'blob:';
+
+if ('serviceWorker' in navigator && !isPreviewEnv) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        nw.addEventListener('statechange', () => {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            pendingWorker = nw;
+            $updateToast.style.display = 'flex';
+          }
+        });
+      });
+    }).catch(err => console.warn('[SW] Registration failed:', err));
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
+    });
+  });
+}
+
+$updateBtn.addEventListener('click', () => {
+  if (pendingWorker) pendingWorker.postMessage({ action: 'skipWaiting' });
+  $updateToast.style.display = 'none';
+});
+
+/* PWA インストールプロンプト */
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  $installBtn.style.display = 'block';
+  setTimeout(() => { $installBtn.style.display = 'none'; }, 12000);
+});
+
+$installBtn.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  $installBtn.style.display = 'none';
+});
+
+window.addEventListener('appinstalled', () => {
+  deferredPrompt = null;
+  $installBtn.style.display = 'none';
+});
+</script>
+
+</body>
+</html>
