@@ -336,6 +336,101 @@
     }
 
     /* =============================
+       PLAYBACK OVERLAY (タップで表示)
+    ============================= */
+    #playback-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: none;
+      pointer-events: none;
+    }
+    #playback-overlay.active {
+      display: block;
+    }
+    #play-timer {
+      position: absolute;
+      top: calc(20px + var(--safe-top));
+      right: 20px;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #fff;
+      font-family: 'Courier New', monospace;
+      background: rgba(0,0,0,0.55);
+      padding: 8px 16px;
+      border-radius: 10px;
+      pointer-events: none;
+    }
+    #play-controls {
+      position: absolute;
+      bottom: calc(32px + var(--safe-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      pointer-events: auto;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+    }
+    #play-controls.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+    .play-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: none;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      padding: 12px 22px;
+      touch-action: manipulation !important;
+      -webkit-tap-highlight-color: transparent;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: transform 0.15s, opacity 0.15s;
+      white-space: nowrap;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+    .play-btn:active { transform: scale(0.92); }
+    .play-btn-stop {
+      background: rgba(220,50,50,0.88);
+      color: #fff;
+      border: 1px solid rgba(255,100,100,0.4);
+    }
+    .play-btn-fs {
+      background: rgba(30,30,50,0.88);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.25);
+    }
+    #tap-hint {
+      position: absolute;
+      bottom: calc(96px + var(--safe-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.32);
+      pointer-events: none;
+      white-space: nowrap;
+      transition: opacity 0.6s;
+    }
+    /* 再生中は通常UIを非表示 */
+    body.playing #header,
+    body.playing #neuro-banner,
+    body.playing #bottom-bar,
+    body.playing #copyright { display: none !important; }
+    body.playing #canvas-wrap {
+      position: fixed !important;
+      inset: 0 !important;
+    }
+    body.playing #app { padding: 0 !important; }
+
+    /* =============================
        COPYRIGHT (最下部)
     ============================= */
     #copyright {
@@ -677,6 +772,16 @@
     <div id="fixation-overlay">
       <div id="fixation-el"></div>
     </div>
+  </div>
+
+  <!-- 再生中オーバーレイ -->
+  <div id="playback-overlay">
+    <div id="play-timer">00:00</div>
+    <div id="play-controls">
+      <button class="play-btn play-btn-stop" id="playStopBtn">■ 停止</button>
+      <button class="play-btn play-btn-fs"   id="playFsBtn">⛶ 全画面</button>
+    </div>
+    <div id="tap-hint">画面をタップして操作</div>
   </div>
 
   <!-- ボトムバー -->
@@ -1029,7 +1134,7 @@ function animate() {
   if (elapsed >= duration) { stop(); return; }
 
   const remaining = duration - Math.floor(elapsed);
-  $timer.textContent =
+  $playTimer.textContent =
     `${String(Math.floor(remaining / 60)).padStart(2,'0')}:${String(remaining % 60).padStart(2,'0')}`;
 
   $ctx.fillStyle = '#000';
@@ -1054,12 +1159,79 @@ function animate() {
 }
 
 /* ============================
+   FULLSCREEN
+============================ */
+function enterFullscreen() {
+  const el = document.documentElement;
+  if      (el.requestFullscreen)       el.requestFullscreen();
+  else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  else if (el.mozRequestFullScreen)    el.mozRequestFullScreen();
+  else if (el.msRequestFullscreen)     el.msRequestFullscreen();
+}
+
+function exitFullscreen() {
+  if      (document.exitFullscreen)       document.exitFullscreen();
+  else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+  else if (document.mozCancelFullScreen)  document.mozCancelFullScreen();
+  else if (document.msExitFullscreen)     document.msExitFullscreen();
+}
+
+function isFullscreen() {
+  return !!(document.fullscreenElement || document.webkitFullscreenElement ||
+            document.mozFullScreenElement || document.msFullscreenElement);
+}
+
+function updateFsBtn() {
+  const $fb = document.getElementById('playFsBtn');
+  if (!$fb) return;
+  $fb.textContent = isFullscreen() ? '⊠ 全画面解除' : '⛶ 全画面';
+}
+
+document.addEventListener('fullscreenchange',       updateFsBtn);
+document.addEventListener('webkitfullscreenchange', updateFsBtn);
+document.addEventListener('mozfullscreenchange',    updateFsBtn);
+
+/* ============================
+   PLAYBACK OVERLAY (tap UI)
+============================ */
+const $playOverlay  = document.getElementById('playback-overlay');
+const $playTimer    = document.getElementById('play-timer');
+const $playControls = document.getElementById('play-controls');
+const $tapHint      = document.getElementById('tap-hint');
+const $playStopBtn  = document.getElementById('playStopBtn');
+const $playFsBtn    = document.getElementById('playFsBtn');
+
+let hideControlsTimer = null;
+
+function showPlayControls() {
+  $playControls.classList.add('visible');
+  $tapHint.style.opacity = '0';
+  clearTimeout(hideControlsTimer);
+  hideControlsTimer = setTimeout(() => {
+    $playControls.classList.remove('visible');
+    $tapHint.style.opacity = '1';
+  }, 3000);
+}
+
+// キャンバスエリアタップ → コントロール表示
+document.getElementById('canvas-wrap').addEventListener('click', e => {
+  if (!isRunning) return;
+  // ボタン自体のクリックは除外
+  if ($playStopBtn.contains(e.target) || $playFsBtn.contains(e.target)) return;
+  showPlayControls();
+});
+
+$playStopBtn.addEventListener('click', stop);
+$playFsBtn.addEventListener('click', () => {
+  isFullscreen() ? exitFullscreen() : enterFullscreen();
+});
+
+/* ============================
    START / STOP
 ============================ */
 function start() {
   if (isRunning) return;
 
-  // メニューを閉じる
   closeMenu();
 
   isRunning = true;
@@ -1068,9 +1240,20 @@ function start() {
   offset    = 0;
   rotAngle  = 0;
 
+  // 再生モードUI切替
+  document.body.classList.add('playing');
+  $playOverlay.classList.add('active');
   $startBtn.disabled = true;
   $stopBtn.disabled  = false;
-  $timer.style.display = 'block';
+
+  // フルスクリーン起動
+  enterFullscreen();
+
+  // タイマー同期
+  $playTimer.textContent = formatTime(duration);
+
+  // ヒント表示
+  $tapHint.style.opacity = '1';
 
   updateFixation($fixSel.value);
   animate();
@@ -1080,12 +1263,24 @@ function stop() {
   isRunning = false;
   if (animId) { cancelAnimationFrame(animId); animId = null; }
 
+  // UI復元
+  document.body.classList.remove('playing');
+  $playOverlay.classList.remove('active');
+  $playControls.classList.remove('visible');
+  clearTimeout(hideControlsTimer);
+
   $startBtn.disabled = false;
   $stopBtn.disabled  = true;
-  $timer.style.display = 'none';
+
+  // フルスクリーン解除
+  if (isFullscreen()) exitFullscreen();
 
   updateFixation('none');
   drawIdle();
+}
+
+function formatTime(sec) {
+  return String(Math.floor(sec/60)).padStart(2,'0') + ':' + String(sec%60).padStart(2,'0');
 }
 
 $startBtn.addEventListener('click', start);
@@ -1099,13 +1294,15 @@ document.addEventListener('keydown', e => {
     e.preventDefault();
     isRunning ? stop() : start();
   }
+  if (e.code === 'KeyF') {
+    if (isRunning) isFullscreen() ? exitFullscreen() : enterFullscreen();
+  }
 });
 
 /* ============================
    PREVENT HORIZONTAL SCROLL
 ============================ */
 document.addEventListener('touchmove', e => {
-  // サイドメニュー内は縦スクロールを許可
   if ($sideMenu.contains(e.target)) return;
   e.preventDefault();
 }, { passive: false });
