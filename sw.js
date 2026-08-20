@@ -1,7 +1,7 @@
 // OKN検査 PWA Service Worker
 // Functional Neuro Training
 
-const CACHE_NAME = 'okn-fnt-v1.0.0';
+const CACHE_NAME = 'okn-fnt-v1.0.1';
 const ASSETS = [
   './',
   './index.html',
